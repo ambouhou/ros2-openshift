@@ -1,7 +1,7 @@
-FROM ros:humble
+FROM ros:foxy
 
 # install ros package
-RUN apt-get update && mkdir /ros2_home
+RUN apt update 
 
 WORKDIR /ros2_home
 
