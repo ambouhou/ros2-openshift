@@ -8,4 +8,4 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /ros2_home
 
 # launch ros package
-CMD ["ros2", "launch", "demo_nodes_cpp", "talker_listener.launch.py"]
+CMD ["ros2", "launch", "talker_listener.launch.py"]
