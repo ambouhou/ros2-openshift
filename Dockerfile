@@ -1,7 +1,7 @@
 FROM ros:foxy
 
 # install ros package
-RUN sudo apt-get install python3-catkin-pkg-modules python3-rospkg-modules && mkdir /home/ros
+RUN sudo apt-get install python-rospy && mkdir /home/ros
 
 COPY test.py /home/ros/
 
