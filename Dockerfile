@@ -8,6 +8,4 @@ CMD /bin/sh -c colcon mixin add default       https://raw.githubusercontent.com/
 
 CMD /bin/sh -c apt-get update && apt-get install -y --no-install-recommends     ros-foxy-ros-base=0.9.2-1*     && rm -rf /var/lib/apt/lists/*
 
-CMD /bin/sh -c ros2 run demo_nodes_cpp listener 
-
-CMD /bin/sh -c ros2 run demo_nodes_cpp talker 
+ENTRYPOINT ["/bin/bash"]
