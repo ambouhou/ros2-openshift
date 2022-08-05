@@ -1,10 +1,6 @@
 FROM ros:foxy
 
 # install ros package
-RUN apt-get update && apt-get install -y \
-      ros-${ROS_DISTRO}-demo-nodes-cpp \
-      ros-${ROS_DISTRO}-demo-nodes-py && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && mkdir /home/ros
 
-# launch ros package
-CMD ["ros2", "launch", "talker_listener.launch.py"]
+COPY test.py /home/ros/
