@@ -1,11 +1,13 @@
 FROM ros:foxy
 
-# install ros package
-RUN apt-get update && apt-get install -y \
-      ros-${ROS_DISTRO}-demo-nodes-py && \
-    rm -rf /var/lib/apt/lists/* && mkdir /ros2_home
+/bin/sh -c apt-get update && apt-get install --no-install-recommends -y     build-essential     git     python3-colcon-common-extensions     python3-colcon-mixin     python3-rosdep     python3-vcstool     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /ros2_home
+/bin/sh -c rosdep init &&   rosdep update --rosdistro $ROS_DISTRO
 
-# launch ros package
-CMD ["ros2", "launch", "talker_listener.launch.py"]
+/bin/sh -c colcon mixin add default       https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml &&     colcon mixin update &&     colcon metadata add default       https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml &&     colcon metadata update
+
+/bin/sh -c apt-get update && apt-get install -y --no-install-recommends     ros-foxy-ros-base=0.9.2-1*     && rm -rf /var/lib/apt/lists/*
+
+RUN /bin/sh -c apt-get update && apt-get install -y --no-install-recommends     ros-foxy-desktop=0.9.2-1*     && rm -rf /var/lib/apt/lists/* # buildkit
+
+CMD ['ros2 run demo_nodes_cpp listener & ros2 run demo_nodes_cpp talker ']
