@@ -1,8 +1,11 @@
 FROM ros:foxy
 
 # install ros package
-RUN sudo apt-get install python-rospy && mkdir /home/ros
+RUN apt-get update && apt-get install -y \
+      ros-${ROS_DISTRO}-demo-nodes-py && \
+    rm -rf /var/lib/apt/lists/* && mkdir /ros2_home
 
-COPY test.py /home/ros/
+WORKDIR /ros2_home
 
-CMD ["/bin/bash", "-c", "source /opt/ros/foxy/setup.bash && python3 /home/ros/test.py"]
+# launch ros package
+CMD ["ros2", "launch", "demo_nodes_cpp", "talker_listener.launch.py"]
