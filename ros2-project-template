@@ -1,0 +1,255 @@
+apiVersion: v1
+kind: Template-Ros2-Project
+metadata:
+  name: ros2-talker-listner-test
+objects:
+- kind: ImageStream-talker
+  apiVersion: v1
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    name: ros2-talker    
+- kind: ImageStream-listner
+  apiVersion: v1
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    name: ros2-listner        
+
+- kind: BuildConfig-ROS-talker
+  apiVersion: v1
+  metadata:
+    name: ros2-talker
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-talker
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'ros2-talker:latest'
+    successfulBuildsHistoryLimit: 5
+    failedBuildsHistoryLimit: 5
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      postCommit: {}
+    source:
+      type: Git
+      git:
+        uri: ${APP_GIT_URL}
+        ref: talker
+      contextDir: /
+    triggers:
+      - type: Generic
+        generic:
+          secretReference:
+            name: ${ros2-talker}-generic-webhook-secret
+      - type: GitHub
+        github:
+          secretReference:
+            name: ${ros2-talker}-github-webhook-secret
+      - type: ConfigChange
+    runPolicy: Serial
+- kind: BuildConfig-ROS-listner
+  apiVersion: v1
+  metadata:
+    name: ros2-listner
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-listner
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'ros2-listner:latest'
+    successfulBuildsHistoryLimit: 5
+    failedBuildsHistoryLimit: 5
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      postCommit: {}
+    source:
+      type: Git
+      git:
+        uri: ${APP_GIT_URL}
+        ref: listner
+      contextDir: /
+    triggers:
+      - type: Generic
+        generic:
+          secretReference:
+            name: ${ros2-listner}-generic-webhook-secret
+      - type: GitHub
+        github:
+          secretReference:
+            name: ${ros2-listner}-github-webhook-secret
+      - type: ConfigChange
+    runPolicy: Serial
+
+- kind: DeploymentConfig-talker
+  apiVersion: v1
+  metadata:
+    name: ros2-talker
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-talker
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ros2-talker
+          from:
+            kind: ImageStreamTag
+            namespace: ${PROJECT_NAME}
+            name: 'ros2-talker:latest'
+      - type: ConfigChange
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: ros2-talker
+      deploymentconfig: ros2-talker
+    template:
+      metadata:
+        labels:
+          app: ros2-talker
+          deploymentconfig: ros2-talker
+      spec:
+        volumes:
+          - name: claim1
+            persistentVolumeClaim:
+              claimName: claim1
+        containers:
+          - name: ros2-talker
+            resources: {}
+            volumeMounts:
+              - name: claim1
+                mountPath: /var/local/SP            
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+- kind: DeploymentConfig-listner
+  apiVersion: v1
+  metadata:
+    name: ros2-listner
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-listner
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ros2-listner
+          from:
+            kind: ImageStreamTag
+            namespace: ${PROJECT_NAME}
+            name: 'ros2-listner:latest'
+      - type: ConfigChange
+    replicas: 1
+    revisionHistoryLimit: 10
+    test: false
+    selector:
+      app: ros2-listner
+      deploymentconfig: ros2-listner
+    template:
+      metadata:
+        labels:
+          app: ros2-listner
+          deploymentconfig: ros2-listner
+      spec:
+        volumes:
+          - name: claim1
+            persistentVolumeClaim:
+              claimName: claim1
+        containers:
+          - name: ros2-listner
+            resources: {}
+            volumeMounts:
+              - name: claim1
+                mountPath: /var/local/SP            
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+        schedulerName: default-scheduler
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    annotations:
+    name: ros2-talker
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-talker
+  spec:
+    ports:
+    - name: 11311-tcp-ros-talker
+      protocol: TCP
+      port: 11311
+      targetPort: 11311
+    selector:
+      app: ros2-talker
+      deploymentconfig: ros2-talker
+    type: ClusterIP
+    sessionAffinity: None
+- kind: Route
+  apiVersion: route.openshift.io/v1
+  metadata:
+    name: ros2-talker
+    namespace: ${PROJECT_NAME}
+    labels:
+      app: ros2-talker
+    annotations:
+  spec:
+    to:
+      kind: Service
+      name: ros2-talker
+      weight: 100
+    port:
+      targetPort: 11311-tcp-ros-talker
+  wildcardPolicy: None
+
+parameters:
+- name: PROJECT_NAME
+  displayName: First try project
+  required: true 
+- name: APP_GIT_URL
+  displayName: Application Source Git URL
+  required: true
